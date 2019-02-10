@@ -1,6 +1,7 @@
 """
 Module defining an API user datastore and access interface
 """
+from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine, Column, String, JSON
@@ -12,9 +13,10 @@ class Datastore:
     Class encapsulating a User persistance backend
 
     >>> ds = Datastore()
-    >>> user = None
     >>> with ds.get_session() as s:
     ...     ds.add(s, 'salvador.dali', 'FACECAFE')
+    >>> user = None # test fetch
+    >>> with ds.get_session() as s:
     ...     user = ds.get(s, 'salvador.dali')
     ...     user.name
     ...     user.pw_hash
@@ -33,11 +35,19 @@ class Datastore:
 
     def __init__(self):
         """Default to an ephemeral SQLite3 backend"""
-        self.engine = create_engine('sqlite:///:memory:')
+        # create a tempfile for this instance
+        self._db_file = NamedTemporaryFile()
+        url = 'sqlite:///{}'.format(self._db_file.name)
+        # create db & migrate declarative schema
+        self.engine = create_engine(url)
         self.Base.metadata.create_all(self.engine)
 
         self.SessionFactory = sessionmaker()
         self.SessionFactory.configure(bind=self.engine)
+
+    def __del__(self):
+        """Clean up db"""
+        self._db_file.close()
 
     @contextmanager
     def get_session(self):
