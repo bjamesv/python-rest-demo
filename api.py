@@ -59,7 +59,29 @@ class UserResource:
         pass
 
 class AuthResource:
-    pass #TODO: implement
+    """Falcon Resource to handle authentication requests"""
+    def on_post(self, req, resp):
+        """Handle user login POST requests.
+
+        Returns an authenticated API session token
+
+        HTTP POST parameters:
+          username  -- New user to create (Required)
+          password  -- New user's password (Required)
+        """
+        username_post_field, password_post_field = 'username', 'password'
+        try:
+            request_username = req.params[username_post_field]
+        except KeyError:
+            raise falcon.HTTPMissingParam(username_post_field)
+        try:
+            request_password = req.params[password_post_field]
+        except KeyError:
+            raise falcon.HTTPMissingParam(password_post_field)
+        #TODO: implement auth
+
+    def on_delete(self, req, resp):
+        pass #TODO: invalidate user's session token
 
 api = falcon.API()
 api.req_options.auto_parse_form_urlencoded = True # parse POST request bodies
@@ -67,4 +89,4 @@ api.req_options.auto_parse_form_urlencoded = True # parse POST request bodies
 api.add_route('/', BaseResource())
 api.add_route('/user', UserResource())
 api.add_route('/user/{username}', UserResource())
-#TODO: add auth routes
+api.add_route('/auth', AuthResource())
