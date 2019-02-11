@@ -4,7 +4,7 @@ Module defining integration tests for the simple REST API
 
 from falcon import testing
 
-import api
+import api, user
 
 class TestApi(testing.TestCase):
     """
@@ -14,6 +14,8 @@ class TestApi(testing.TestCase):
     """
     def setUp(self):
         super(TestApi, self).setUp()
+        # reset the user storage
+        api.user_storage = user.Datastore()
         self.app = api.api
 
 class TestBase(TestApi):
@@ -42,3 +44,19 @@ class TestUser(TestApi):
         # test for reject of double-registration
         with self.assertRaises(Exception):
             double_result = self.simulate_post(user_url, params = test_params)
+
+class TestAuth(TestApi):
+    def test_post(self):
+        """test authentication"""
+        auth_url = '/auth'
+        test_params = {'username': 'cruzbustamante', 'password': 'secret'}
+        # no user exists yet
+        with self.assertRaises(user.UserNotFoundException):
+            result = self.simulate_post(auth_url, params = test_params)
+        # now sign up a user
+        user_url = '/user'
+        result = self.simulate_post(user_url, params = test_params)
+        # test again
+        expected = {'message': "Login success!"} #TODO: check for session token
+        result = self.simulate_post(auth_url, params = test_params)
+        self.assertEqual(result.json, expected)

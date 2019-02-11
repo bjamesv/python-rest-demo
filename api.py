@@ -2,9 +2,9 @@
 
 import falcon
 
-from user import Datastore
+import user, auth
 
-user_storage = Datastore()
+user_storage = user.Datastore()
 
 class BaseResource:
     """Falcon resource to handle requests with no URL path"""
@@ -36,7 +36,8 @@ class UserResource:
         new_data = None #optional
         if data_post_field in req.params:
             new_data = req.params[data_post_field]
-        new_hash = 'NOTAHASH' #TODO: implement hashing of user password
+        # securely hash user password & attempt to add new user
+        new_hash = user.hash_password(request_password)
         with user_storage.get_session() as session:
             user_storage.add(session,
                              new_name = request_username,
@@ -78,7 +79,12 @@ class AuthResource:
             request_password = req.params[password_post_field]
         except KeyError:
             raise falcon.HTTPMissingParam(password_post_field)
-        #TODO: implement auth
+        stored_hash = user.get_user_hash(user_storage, request_username)
+        if auth.check_password(request_password, stored_hash):
+            #TODO: implement login session
+            resp.media = {'message': 'Login success!'}
+            return
+        raise falcon.HTTPUnauthorized(title='Login incorrect')
 
     def on_delete(self, req, resp):
         pass #TODO: invalidate user's session token
