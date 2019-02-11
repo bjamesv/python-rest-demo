@@ -1,3 +1,4 @@
 **/*-env/**
 **/__pycache__/**
 **/beaker.sqlite3
+**/*.pyc

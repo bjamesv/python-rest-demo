@@ -26,6 +26,22 @@ class TestBase(TestApi):
         result = self.simulate_get(base_url)
         self.assertEqual(result.json, expected)
 
+    def test_get_authenticated(self):
+        base_url = '/'
+        # sign up a user
+        user_url = '/user'
+        test_params = {'username': 'cruz.bustamante', 'password': 'secret'}
+        result = self.simulate_post(user_url, params = test_params)
+        self.assertEqual(result.status_code, 200) # OK
+        # log in
+        auth_url = '/auth'
+        result = self.simulate_post(auth_url, params = test_params)
+        session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
+        # check base URL
+        expected = {'username': 'cruz.bustamante'} #TODO: expect user data
+        result = self.simulate_get(base_url, headers={'Cookie': session_token})
+        self.assertEqual(result.json, expected)
+
 class TestUser(TestApi):
     """Test the /user API url path"""
     def test_get(self):
