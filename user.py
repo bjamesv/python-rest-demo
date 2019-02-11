@@ -30,6 +30,32 @@ def hash_password(user_password):
     # generate new salt and secure pw hash
     return argon2.hash(user_password)
 
+def get_user_data(datastore, username):
+    """
+    Returns a dict representing referenced user
+
+    Keyword Parameters:
+      datastore  -- (Datastore) object providing user persistance
+      username  -- (String) name of the user to retrieve
+
+    >>> from pprint import pprint
+    >>> ds = Datastore()
+    >>> with ds.get_session() as s:
+    ...     ds.add(s, 'salvador.dali', 'fake_hash', "{'address': 'earth'}")
+    >>> user = get_user_data(ds, 'salvador.dali')
+    >>> pprint(user)
+    {'data': "{'address': 'earth'}", 'username': 'salvador.dali'}
+    >>> get_user_data(ds, 'florence.nightingale')
+    Traceback (most recent call last):
+       ...
+    user.UserNotFoundException: florence.nightingale
+    """
+    with datastore.get_session() as session:
+        stored_user = datastore.get(session, username)
+        if stored_user:
+            return {'username': stored_user.name, 'data': stored_user.data}
+        raise UserNotFoundException(username)
+
 def get_user_hash(datastore, username):
     """
     Returns datastore secure hash for referenced user

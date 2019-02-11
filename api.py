@@ -50,7 +50,14 @@ class UserResource:
 
     def on_get(self, req, resp, username=None):
         """Handle GET requests for user data"""
-        user_data = {} #TODO: implement
+        session_user = session.get_user_name(req)
+        if not session_user:
+            raise falcon.HTTPUnauthorized(title='Login required')
+        if session_user != username:
+            raise falcon.HTTPUnauthorized(title='Permission denied')
+
+        # fetch data
+        user_data = user.get_user_data(user_storage, username)
         resp.media = user_data
 
     def on_put(self, req, resp, username=None):
