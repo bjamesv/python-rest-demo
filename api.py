@@ -11,9 +11,9 @@ class BaseResource:
     def on_get(self, req, resp):
         """Handle GET requests"""
         json_body = ["Hello World"] #default
-        if session.get_user_name(req):
-            json_body = {'username': session.get_user_name(req)}
-        #TODO: if session exists, return username+user JSON data
+        login_user = session.get_user_name(req) #check login
+        if login_user:
+            json_body = user.get_user_data(user_storage, login_user)
         resp.media = json_body
 
 class UserResource:
