@@ -8,6 +8,54 @@ from sqlalchemy import create_engine, Column, String, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from passlib.hash import argon2
+
+class UserNotFoundException(RuntimeError):
+    """Raised when specified user not found in datastore"""
+    pass
+
+def hash_password(user_password):
+    """
+    utilty function to securely hash user password
+
+    Keyword Parameters:
+      user_password  -- (String) plain-text password supplied by user
+
+    >>> initial_hash = hash_password('secret2')
+    >>> len(initial_hash) # fixed length
+    76
+    >>> initial_hash[:16] # spot-check hash header
+    '$argon2i$v=19$m='
+    """
+    # generate new salt and secure pw hash
+    return argon2.hash(user_password)
+
+def get_user_hash(datastore, username):
+    """
+    Returns datastore secure hash for referenced user
+
+    Keyword Parameters:
+      datastore  -- (Datastore) object providing user persistance
+      username  -- (String) name of the user to retrieve hash for
+
+    >>> ds = Datastore()
+    >>> hash = hash_password('secret2')
+    >>> with ds.get_session() as s:
+    ...     ds.add(s, 'salvador.dali', hash)
+    >>> test_hash = get_user_hash(ds, 'salvador.dali')
+    >>> test_hash == hash
+    True
+    >>> get_user_hash(ds, 'florence.nightingale')
+    Traceback (most recent call last):
+       ...
+    user.UserNotFoundException: florence.nightingale
+    """
+    with datastore.get_session() as session:
+        stored_user = datastore.get(session, username)
+        if stored_user:
+            return stored_user.pw_hash
+        raise UserNotFoundException(username)
+
 class Datastore:
     """
     Class encapsulating a User persistance backend
