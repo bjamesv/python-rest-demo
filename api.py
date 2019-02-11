@@ -2,7 +2,7 @@
 
 import falcon
 
-import user, auth
+import user, auth, session
 
 user_storage = user.Datastore()
 
@@ -11,6 +11,8 @@ class BaseResource:
     def on_get(self, req, resp):
         """Handle GET requests"""
         json_body = ["Hello World"] #default
+        if session.get_user_name(req):
+            json_body = {'username': session.get_user_name(req)}
         #TODO: if session exists, return username+user JSON data
         resp.media = json_body
 
@@ -38,8 +40,8 @@ class UserResource:
             new_data = req.params[data_post_field]
         # securely hash user password & attempt to add new user
         new_hash = user.hash_password(request_password)
-        with user_storage.get_session() as session:
-            user_storage.add(session,
+        with user_storage.get_session() as storage_session:
+            user_storage.add(storage_session,
                              new_name = request_username,
                              new_hash = new_hash,
                              new_json = new_data)
@@ -81,7 +83,8 @@ class AuthResource:
             raise falcon.HTTPMissingParam(password_post_field)
         stored_hash = user.get_user_hash(user_storage, request_username)
         if auth.check_password(request_password, stored_hash):
-            #TODO: implement login session
+            # log in user
+            session.create_login_session(request_username, req)
             resp.media = {'message': 'Login success!'}
             return
         raise falcon.HTTPUnauthorized(title='Login incorrect')
@@ -96,3 +99,6 @@ api.add_route('/', BaseResource())
 api.add_route('/user', UserResource())
 api.add_route('/user/{username}', UserResource())
 api.add_route('/auth', AuthResource())
+
+# add WSGI middleware
+api = session.wrap_app_with_session_middleware(api) # add web sessions

@@ -6,6 +6,7 @@ Steps to build & run the API
 
     $ git clone https://github.com/bjamesv/python-rest-demo.git
     $ cd python-rest-demo/
+    $ rm beaker.sqlite3 # If db exists, from local testing
     $ docker build -t restdemo .
 
 ## Run

@@ -57,6 +57,9 @@ class TestAuth(TestApi):
         user_url = '/user'
         result = self.simulate_post(user_url, params = test_params)
         # test again
-        expected = {'message': "Login success!"} #TODO: check for session token
+        expected_header = 'set-cookie' # check for session token
         result = self.simulate_post(auth_url, params = test_params)
-        self.assertEqual(result.json, expected)
+        self.assertIn(expected_header, result.headers)
+        result_token_key_value_pair = result.headers['set-cookie']
+        expected_token_prefix = ' api.session.id='
+        self.assertEqual(result_token_key_value_pair[:16], expected_token_prefix)
