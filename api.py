@@ -79,7 +79,16 @@ class UserResource:
 
     def on_delete(self, req, resp, username=None):
         """Handle DELETE requests to remove user"""
-        pass
+        session_user = session.get_user_name(req)
+        if not session_user:
+            raise falcon.HTTPUnauthorized(title='Login required')
+        if session_user != username:
+            raise falcon.HTTPUnauthorized(title='Permission denied')
+
+        # delete user
+        user.delete_user(user_storage, username)
+        # and revoke user's session token
+        session.invalidate_session(req)
 
 class AuthResource:
     """Falcon Resource to handle authentication requests"""

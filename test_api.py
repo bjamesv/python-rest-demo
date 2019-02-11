@@ -110,6 +110,37 @@ class TestUser(TestApi):
         result = self.simulate_get(user_url, headers={'Cookie': session_token})
         self.assertEqual(result.json, expected)
 
+    def test_delete(self):
+        user_url = '/user/d-admin'
+        # no login session
+        expected = {'title': 'Login required'} # no data
+        result = self.simulate_delete(user_url)
+        self.assertEqual(result.json, expected)
+
+        # sign up a user
+        signup_url = '/user'
+        test_params = {'username': 'd-admin', 'password': 'too)short'}
+        result = self.simulate_post(signup_url, params = test_params)
+        self.assertEqual(result.status_code, 200) # OK
+        # log in
+        auth_url = '/auth'
+        result = self.simulate_post(auth_url, params = test_params)
+        session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
+
+        # delete user
+        result = self.simulate_delete(user_url,
+                                      headers = {'Cookie': session_token})
+        self.assertEqual(result.status_code, 200) # OK
+        # check for user data
+        base_url = '/'
+        expected = ['Hello World'] # no data
+        result = self.simulate_get(base_url, headers={'Cookie': session_token})
+        self.assertEqual(result.json, expected)
+
+        # test user recreation (should succeed, now)
+        result = self.simulate_post(signup_url, params = test_params)
+        self.assertEqual(result.status_code, 200) # OK
+
 class TestAuth(TestApi):
     def test_post(self):
         """test authentication"""
