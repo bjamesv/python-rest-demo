@@ -77,6 +77,24 @@ class TestUser(TestApi):
         with self.assertRaises(Exception):
             double_result = self.simulate_post(user_url, params = test_params)
 
+        # test optional JSON sign up data (with comma characters in it)
+        signup_url = '/user' # sign up a user
+        test_json = '{"address":"1 Microsoft Way", "phone":"1-555-555-5555"}'
+        test_params = {'username': 'salvador.dali', 'password': 'secret1', 'data': test_json}
+        result = self.simulate_post(signup_url, params = test_params)
+        self.assertEqual(result.status_code, 200) # OK
+        # log in
+        auth_url = '/auth'
+        result = self.simulate_post(auth_url, params = test_params)
+        session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
+
+        # get data, with session token
+        user_url = '/user/salvador.dali'
+        expected = {'data': {'address': '1 Microsoft Way', 'phone': '1-555-555-5555'},
+                    'username': 'salvador.dali'} #data should be dict, not array of str
+        result = self.simulate_get(user_url, headers={'Cookie': session_token})
+        self.assertEqual(result.json, expected)
+
     def test_put(self):
         user_url = '/user/pat.ng'
         # no login session
