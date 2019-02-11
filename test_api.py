@@ -79,3 +79,31 @@ class TestAuth(TestApi):
         result_token_key_value_pair = result.headers['set-cookie']
         expected_token_prefix = ' api.session.id='
         self.assertEqual(result_token_key_value_pair[:16], expected_token_prefix)
+
+    def test_delete(self):
+        """test logout"""
+        auth_url = '/auth'
+
+        # sign up a user
+        user_url = '/user'
+        test_params = {'username': 'cruz.bustamante', 'password': 'secret'}
+        result = self.simulate_post(user_url, params = test_params)
+        self.assertEqual(result.status_code, 200) # OK
+        # log in
+        auth_url = '/auth'
+        result = self.simulate_post(auth_url, params = test_params)
+        session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
+        # confirm session token's valid
+        base_url = '/'
+        expected = {'username': 'cruz.bustamante'} #TODO: expect user data
+        result = self.simulate_get(base_url, headers={'Cookie': session_token})
+        self.assertEqual(result.json, expected)
+
+        # logout
+        result = self.simulate_delete(auth_url, headers={'Cookie': session_token})
+        self.assertEqual(result.status_code, 200) # OK
+
+        # confirm session token is no longer valid
+        expected = ['Hello World'] # no user session data
+        result = self.simulate_get(base_url, headers={'Cookie': session_token})
+        self.assertEqual(result.json, expected)

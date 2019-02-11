@@ -90,7 +90,8 @@ class AuthResource:
         raise falcon.HTTPUnauthorized(title='Login incorrect')
 
     def on_delete(self, req, resp):
-        pass #TODO: invalidate user's session token
+        """Handle user logout DELETE requests"""
+        session.invalidate_session(req)
 
 api = falcon.API()
 api.req_options.auto_parse_form_urlencoded = True # parse POST request bodies

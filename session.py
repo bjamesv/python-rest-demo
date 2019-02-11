@@ -43,6 +43,16 @@ def get_user_name(request):
             pass # return default
     return session_user_name
 
+def invalidate_session(request):
+    """
+    Delete current API session & mark session token as invalid
+
+    Keyword Parameters:
+    request  -- Falcon HTTP request object representing current API call
+    """
+    if 'beaker.session' in request.env:
+        request.env['beaker.session'].delete()
+
 def wrap_app_with_session_middleware(wsgi_app):
     """
     Install Middleware for session establishment around referenced app
