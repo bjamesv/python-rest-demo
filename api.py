@@ -11,9 +11,9 @@ class BaseResource:
     def on_get(self, req, resp):
         """Handle GET requests"""
         json_body = ["Hello World"] #default
-        if session.get_user_name(req):
-            json_body = {'username': session.get_user_name(req)}
-        #TODO: if session exists, return username+user JSON data
+        login_user = session.get_user_name(req) #check login
+        if login_user:
+            json_body = user.get_user_data(user_storage, login_user)
         resp.media = json_body
 
 class UserResource:
@@ -50,16 +50,45 @@ class UserResource:
 
     def on_get(self, req, resp, username=None):
         """Handle GET requests for user data"""
-        user_data = {} #TODO: implement
+        session_user = session.get_user_name(req)
+        if not session_user:
+            raise falcon.HTTPUnauthorized(title='Login required')
+        if session_user != username:
+            raise falcon.HTTPUnauthorized(title='Permission denied')
+
+        # fetch data
+        user_data = user.get_user_data(user_storage, username)
         resp.media = user_data
 
     def on_put(self, req, resp, username=None):
-        """Handle PUT requests for user data update"""
-        pass
+        """
+        Handle PUT requests for user data update
+
+        The entire HTTP PUT body will is treated as the new JSON data
+        value.
+        """
+        session_user = session.get_user_name(req)
+        if not session_user:
+            raise falcon.HTTPUnauthorized(title='Login required')
+        if session_user != username:
+            raise falcon.HTTPUnauthorized(title='Permission denied')
+
+        # update data
+        new_data = req.media
+        user.update_user_data(user_storage, username, new_data)
 
     def on_delete(self, req, resp, username=None):
         """Handle DELETE requests to remove user"""
-        pass
+        session_user = session.get_user_name(req)
+        if not session_user:
+            raise falcon.HTTPUnauthorized(title='Login required')
+        if session_user != username:
+            raise falcon.HTTPUnauthorized(title='Permission denied')
+
+        # delete user
+        user.delete_user(user_storage, username)
+        # and revoke user's session token
+        session.invalidate_session(req)
 
 class AuthResource:
     """Falcon Resource to handle authentication requests"""
