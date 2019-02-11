@@ -61,8 +61,21 @@ class UserResource:
         resp.media = user_data
 
     def on_put(self, req, resp, username=None):
-        """Handle PUT requests for user data update"""
-        pass
+        """
+        Handle PUT requests for user data update
+
+        The entire HTTP PUT body will is treated as the new JSON data
+        value.
+        """
+        session_user = session.get_user_name(req)
+        if not session_user:
+            raise falcon.HTTPUnauthorized(title='Login required')
+        if session_user != username:
+            raise falcon.HTTPUnauthorized(title='Permission denied')
+
+        # update data
+        new_data = req.media
+        user.update_user_data(user_storage, username, new_data)
 
     def on_delete(self, req, resp, username=None):
         """Handle DELETE requests to remove user"""

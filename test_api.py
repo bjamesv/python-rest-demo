@@ -38,7 +38,7 @@ class TestBase(TestApi):
         result = self.simulate_post(auth_url, params = test_params)
         session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
         # check base URL
-        expected = {'data': '{"cb":"special data"}', 'username': 'cruz.bustamante'}
+        expected = {'data': {'cb': 'special data'}, 'username': 'cruz.bustamante'}
         result = self.simulate_get(base_url, headers={'Cookie': session_token})
         self.assertEqual(result.json, expected)
 
@@ -76,6 +76,39 @@ class TestUser(TestApi):
         # test for reject of double-registration
         with self.assertRaises(Exception):
             double_result = self.simulate_post(user_url, params = test_params)
+
+    def test_put(self):
+        user_url = '/user/pat.ng'
+        # no login session
+        expected = {'title': 'Login required'} # no data
+        result = self.simulate_put(user_url)
+        self.assertEqual(result.json, expected)
+
+        # sign up a user
+        signup_url = '/user'
+        test_params = {'username': 'pat.ng', 'password': 'greatpass'}
+        result = self.simulate_post(signup_url, params = test_params)
+        self.assertEqual(result.status_code, 200) # OK
+        # log in
+        auth_url = '/auth'
+        result = self.simulate_post(auth_url, params = test_params)
+        session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
+
+        # update data, with session token
+        new_data = '{"address": "21 Jump St.",' \
+                   +'"email": "pat@ng.fake",' \
+                   +'"phone": "1-555-555-5555"}'
+        result = self.simulate_put(user_url,
+                                   body = new_data,
+                                   headers = {'Cookie': session_token})
+        self.assertEqual(result.status_code, 200) # OK
+        # check data
+        expected = {'data': {'address': '21 Jump St.',
+                             'email': 'pat@ng.fake',
+                             'phone': '1-555-555-5555'},
+                    'username': 'pat.ng'}
+        result = self.simulate_get(user_url, headers={'Cookie': session_token})
+        self.assertEqual(result.json, expected)
 
 class TestAuth(TestApi):
     def test_post(self):
