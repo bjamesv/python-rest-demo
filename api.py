@@ -37,7 +37,12 @@ class UserResource:
             raise falcon.HTTPMissingParam(password_post_field)
         new_data = None #optional
         if data_post_field in req.params:
-            new_data = req.params[data_post_field]
+            # Falcon has special handling of commas in post data,
+            # our JSON text may be split on any commas into list of str
+            falcon_data = req.params[data_post_field]
+            new_data = falcon_data # default, assume text is unmangled
+            if isinstance(falcon_data, list): #text was munged
+                new_data = ','.join(falcon_data)#merge strings & add commas back in
         # securely hash user password & attempt to add new user
         new_hash = user.hash_password(request_password)
         with user_storage.get_session() as storage_session:
