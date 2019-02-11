@@ -30,7 +30,7 @@ class TestBase(TestApi):
         base_url = '/'
         # sign up a user
         user_url = '/user'
-        test_params = {'username': 'cruz.bustamante', 'password': 'secret'}
+        test_params = {'username': 'cruz.bustamante', 'password': 'secret', 'data': '{"cb":"special data"}'}
         result = self.simulate_post(user_url, params = test_params)
         self.assertEqual(result.status_code, 200) # OK
         # log in
@@ -38,7 +38,7 @@ class TestBase(TestApi):
         result = self.simulate_post(auth_url, params = test_params)
         session_token, expire_info = result.headers['set-cookie'].lstrip().split(';', 1)
         # check base URL
-        expected = {'data': None, 'username': 'cruz.bustamante'}
+        expected = {'data': '{"cb":"special data"}', 'username': 'cruz.bustamante'}
         result = self.simulate_get(base_url, headers={'Cookie': session_token})
         self.assertEqual(result.json, expected)
 
