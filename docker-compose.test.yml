@@ -1,7 +1,11 @@
 # Simple Docker Compose YAML file to enable automated hub.docker.com tests
 # per: https://docs.docker.com/docker-hub/builds/automated-testing
-sut:
-  # mod_wsgi container build includes pip install of requirements
-  build: .
-  # command runs inside the built mod_wsgi container
-  command: true #TODO: remove debug
+version: "2"
+services:
+  sut:
+    # build test container & pip install our requirements
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    # command runs inside the built mod_wsgi container
+    command: python3 -m unittest discover

@@ -1,0 +1,12 @@
+# Simple Dockerfile to build a REST demo testing image
+
+FROM python:3.5
+
+# Add project files
+COPY . /root
+
+# build everything in the root home directory
+WORKDIR /root
+
+# install prereqs
+RUN pip install --no-cache-dir -r requirements.txt
