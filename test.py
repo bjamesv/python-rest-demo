@@ -3,7 +3,7 @@ Simple module defining unittest testcases for project doctests
 """
 import doctest
 
-import user, auth
+import user, auth, session
 
 def load_tests(loader, tests, ignore):
     """
@@ -11,4 +11,5 @@ def load_tests(loader, tests, ignore):
     """
     tests.addTests(doctest.DocTestSuite(auth))
     tests.addTests(doctest.DocTestSuite(user))
+    tests.addTests(doctest.DocTestSuite(session))
     return tests
